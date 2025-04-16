@@ -25,6 +25,15 @@ def main():
     exposure_time = 35000
     left_camera.ExposureTime.SetValue(exposure_time)
     right_camera.ExposureTime.SetValue(exposure_time)
+
+    camera_width = 3072
+    left_camera.Width.SetValue(camera_width)
+    right_camera.Width.SetValue(camera_width)
+
+    left_offset_x = 864
+    left_camera.OffsetX.SetValue(left_offset_x)
+    right_offset_x = 564
+    right_camera.OffsetX.SetValue(right_offset_x)
     
     # Start grabbing continuously from both cameras
     left_camera.StartGrabbing(pylon.GrabStrategy_LatestImageOnly)
