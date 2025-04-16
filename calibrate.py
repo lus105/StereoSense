@@ -13,8 +13,8 @@ class StereoCalibration:
         chessboard_height: int,
         chessboard_width: int,
         square_size: float,
-        file_extension: str = ".png",
-        output_path: str = "output/",
+        file_extension: str = '.png',
+        output_path: str = 'output/',
     ) -> None:
         """Initialize stereo calibration.
 
@@ -60,6 +60,7 @@ class StereoCalibration:
                 - right_0000.png
                 - right_0001.png
                 - ...
+
         """
         self._left_image_paths = sorted(
             [p for p in self._left_path.iterdir() if p.suffix == self._file_extension]
@@ -72,10 +73,9 @@ class StereoCalibration:
     def _create_3d_chessboard_points(self) -> np.ndarray:
         """Create 3D chessboard points for a given chessboard size and square size.
 
-        Returns
-        -------
-        np.ndarray
-            Nx3 array of 3D points: N = number of squares in chessboard
+
+        Returns:
+            np.ndarray: array of 3D points: N = number of squares in chessboard
         """
 
         # create Nx3 array of 3D points: N = number of squares in chessboard
@@ -89,15 +89,11 @@ class StereoCalibration:
     def _create_2d_chessboard_points(self, image: np.ndarray) -> np.ndarray:
         """Create 2D chessboard points for a given image and chessboard size.
 
-        Parameters
-        ----------
-        image : np.ndarray
-            image of chessboard
+        Args:
+            image (np.ndarray): image of chessboard
 
-        Returns
-        -------
-        np.ndarray
-            Nx1x2 array of 2D points: N = number of corners found in the image
+        Returns:
+            np.ndarray: Nx1x2 array of 2D points: N = number of corners found in the image
         """
         # termination criteria
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
@@ -116,9 +112,13 @@ class StereoCalibration:
         return corners
 
     def _create_chessboard_points(self, save_images: bool = False) -> None:
-        """Create 3D and 2D chessboard points for left and right images."""
-        (self._output_path / "left").mkdir(exist_ok=True, parents=True)
-        (self._output_path / "right").mkdir(exist_ok=True, parents=True)
+        """Create 3D and 2D chessboard points for left and right images.
+
+        Args:
+            save_images (bool, optional): Save images with points. Defaults to False.
+        """
+        (self._output_path / 'left').mkdir(exist_ok=True, parents=True)
+        (self._output_path / 'right').mkdir(exist_ok=True, parents=True)
 
         for left_image_path, right_image_path in tqdm(
             zip(self._left_image_paths, self._right_image_paths)
@@ -137,8 +137,8 @@ class StereoCalibration:
                 )
                 left_image_name = left_image_path.name
                 right_image_name = right_image_path.name
-                left_image_path = self._output_path / "left" / left_image_name
-                right_image_path = self._output_path / "right" / right_image_name
+                left_image_path = self._output_path / 'left' / left_image_name
+                right_image_path = self._output_path / 'right' / right_image_name
 
                 cv2.imwrite(str(left_image_path), left_image)
                 cv2.imwrite(str(right_image_path), right_image)
@@ -159,8 +159,17 @@ class StereoCalibration:
     def calibrate_single_camera(
         self, left: bool
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Calibrate single camera.
+
+        Args:
+            left (bool): True for left camera, False for right camera
+
+        Returns:
+            tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]: camera matrix,
+              distortion coefficients, new camera matrix, ROI
+        """
         # left camera calibration
-        print("Calibrating left camera...")
+        print('Calibrating left camera...')
         if left:
             ret_left, mtx_left, dist_left, rvecs_left, tvecs_left = cv2.calibrateCamera(
                 self._chessboard_3d_left_points,
@@ -173,7 +182,7 @@ class StereoCalibration:
             newcameramtx_left, roi_left = cv2.getOptimalNewCameraMatrix(
                 mtx_left, dist_left, self._left_image_size, 1, self._left_image_size
             )
-            print("Left camera calibration complete!")
+            print('Left camera calibration complete!')
 
             return mtx_left, dist_left, newcameramtx_left, roi_left
         else:
@@ -186,11 +195,11 @@ class StereoCalibration:
                     None,
                 )
             )
-            print("Getting optimal new camera matrix for right camera...")
+            print('Getting optimal new camera matrix for right camera...')
             newcameramtx_right, roi_right = cv2.getOptimalNewCameraMatrix(
                 mtx_right, dist_right, self._right_image_size, 1, self._right_image_size
             )
-            print("Right camera calibration complete!")
+            print('Right camera calibration complete!')
 
             return mtx_right, dist_right, newcameramtx_right, roi_right
 
@@ -205,10 +214,8 @@ class StereoCalibration:
         5. Stereo mapping
 
 
-        Returns
-        -------
-        Tuple[np.ndarray, np.ndarray]
-            stereo_map_left, stereo_map_right
+        Returns:
+            tuple[np.ndarray, np.ndarray]: stereo_map_left, stereo_map_right
         """
         self._create_chessboard_points(save_images=True)
 
@@ -216,14 +223,16 @@ class StereoCalibration:
         mtx_left, dist_left, newcameramtx_left, roi_left = self.calibrate_single_camera(
             left=True
         )
+        print('Left camera matrix', newcameramtx_left)
 
         # right camera calibration
-        mtx_right, dist_right, newcameramtx_right, roi_right = self.calibrate_single_camera(
-            left=False
+        mtx_right, dist_right, newcameramtx_right, roi_right = (
+            self.calibrate_single_camera(left=False)
         )
+        print('Right camera matrix', newcameramtx_right)
 
         # stereo calibration
-        print("Calibrating stereo...")
+        print('Calibrating stereo...')
         flags = 0
         flags |= cv2.CALIB_FIX_INTRINSIC
         criteria = (cv2.TERM_CRITERIA_MAX_ITER + cv2.TERM_CRITERIA_EPS, 30, 0.001)
@@ -249,11 +258,11 @@ class StereoCalibration:
             criteria=criteria,
             flags=flags,
         )
-        print("translation vector", trans)
-        print("rotation matrix", rot)
+        print('translation vector', trans)
+        print('rotation matrix', rot)
 
         # stereo rectification
-        print("Rectifying stereo camera...")
+        print('Rectifying stereo camera...')
         rect_left, rect_right, proj_left, proj_right, Q, roi_left, roi_right = (
             cv2.stereoRectify(
                 newcameramtx_left,
@@ -269,7 +278,7 @@ class StereoCalibration:
         )
 
         # stereo mapping
-        print("Mapping left and right cameras...")
+        print('Mapping left and right cameras...')
         stereo_map_left = cv2.initUndistortRectifyMap(
             newcameramtx_left,
             dist_left,
@@ -286,7 +295,7 @@ class StereoCalibration:
             self._right_image_size,
             cv2.CV_16SC2,
         )
-        print("Calibration complete!")
+        print('Calibration complete!')
         self._stereo_map_left = stereo_map_left
         self._stereo_map_right = stereo_map_right
         return stereo_map_left, stereo_map_right
@@ -294,62 +303,58 @@ class StereoCalibration:
     def save_stereo_calibration(self) -> None:
         """Save stereo calibration to XML file."""
 
-        print("Saving stereo calibration...")
-        xml_path = self._output_path / "stereo_calibration.xml"
+        print('Saving stereo calibration...')
+        # create output directory if it doesn't exist
+        self._output_path.mkdir(exist_ok=True, parents=True)
+        xml_path = self._output_path / 'stereo_calibration.xml'
         fs = cv2.FileStorage(xml_path, cv2.FILE_STORAGE_WRITE)
-        fs.write("stereo_map_left_x", self._stereo_map_left[0])
-        fs.write("stereo_map_left_y", self._stereo_map_left[1])
-        fs.write("stereo_map_right_x", self._stereo_map_right[0])
-        fs.write("stereo_map_right_y", self._stereo_map_right[1])
+        fs.write('stereo_map_left_x', self._stereo_map_left[0])
+        fs.write('stereo_map_left_y', self._stereo_map_left[1])
+        fs.write('stereo_map_right_x', self._stereo_map_right[0])
+        fs.write('stereo_map_right_y', self._stereo_map_right[1])
         fs.release()
 
 
 def read_stereo_calibration(xml_path: str) -> tuple[np.ndarray, np.ndarray]:
     """Read stereo calibration from XML file.
 
-    Parameters
-    ----------
-    xml_path : str
-        path to XML file
+    Args:
+        xml_path (str): path to XML file
 
-    Returns
-    -------
-    Tuple[np.ndarray, np.ndarray]
-        stereo_map_left, stereo_map_right
+    Returns:
+        tuple[np.ndarray, np.ndarray]: stereo_map_left, stereo_map_right
     """
 
-    print("Reading stereo calibration...")
+    print('Reading stereo calibration...')
     # use cv2.FileStorage to read stereo calibration
     fs = cv2.FileStorage(xml_path, cv2.FILE_STORAGE_READ)
-    stereo_map_left_x = fs.getNode("stereo_map_left_x").mat()
-    stereo_map_left_y = fs.getNode("stereo_map_left_y").mat()
-    stereo_map_right_x = fs.getNode("stereo_map_right_x").mat()
-    stereo_map_right_y = fs.getNode("stereo_map_right_y").mat()
+    stereo_map_left_x = fs.getNode('stereo_map_left_x').mat()
+    stereo_map_left_y = fs.getNode('stereo_map_left_y').mat()
+    stereo_map_right_x = fs.getNode('stereo_map_right_x').mat()
+    stereo_map_right_y = fs.getNode('stereo_map_right_y').mat()
     fs.release()
     return (stereo_map_left_x, stereo_map_left_y), (
         stereo_map_right_x,
         stereo_map_right_y,
     )
 
+
 def rectify_images(
-        left_image: np.ndarray,
-        right_image: np.ndarray,
-        stereo_map_left: tuple[np.ndarray, np.ndarray],
-        stereo_map_right: tuple[np.ndarray, np.ndarray]
+    left_image: np.ndarray,
+    right_image: np.ndarray,
+    stereo_map_left: tuple[np.ndarray, np.ndarray],
+    stereo_map_right: tuple[np.ndarray, np.ndarray],
 ) -> tuple[np.ndarray, np.ndarray]:
     """Rectify left and right images using stereo mapping.
 
-    Parameters
-    ----------
-    left_image : np.ndarray
-        left image
-    right_image : np.ndarray
-        right image
+    Args:
+        left_image (np.ndarray): left_image
+        right_image (np.ndarray): right_image
+        stereo_map_left (tuple[np.ndarray, np.ndarray]): stereo_map_left
+        stereo_map_right (tuple[np.ndarray, np.ndarray]): stereo_map_right
 
-    Returns
-    -------
-    Tuple[np.ndarray, np.ndarray]
-        left_rectified, right_rectified
+    Returns:
+        tuple[np.ndarray, np.ndarray]: left_rectified, right_rectified (images)
     """
     # rectify images
     left_rectified = cv2.remap(
@@ -369,27 +374,3 @@ def rectify_images(
         0,
     )
     return left_rectified, right_rectified
-
-def main():
-    left_path = "data/left"
-    right_path = "data/right"
-    chessboard_height = 6
-    chessboard_width = 9
-    square_size = 0.076
-    file_extension = ".png"
-
-    stereo_calibration = StereoCalibration(
-        left_path,
-        right_path,
-        chessboard_height,
-        chessboard_width,
-        square_size,
-        file_extension,
-    )
-
-    stereo_calibration.calibrate()
-    stereo_calibration.save_stereo_calibration()
-
-
-if __name__ == "__main__":
-    main()
