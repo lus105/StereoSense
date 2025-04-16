@@ -2,5 +2,6 @@ numpy
 opencv-python
 matplotlib
 tqdm
+pypylon
 ruff
 onnxruntime-gpu
