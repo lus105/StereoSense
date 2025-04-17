@@ -25,7 +25,7 @@ class StereoCalibration:
             chessboard_height (int): height of chessboard
             chessboard_width (int): width of chessboard
             square_size (float): size of square in meters
-            distance_between_cameras (float, optional): distance between cameras 
+            distance_between_cameras (float, optional): distance between cameras
                 in meters. Defaults to 0.1.
             file_extension (str): file extension of images
             output_path (str): path to output directory

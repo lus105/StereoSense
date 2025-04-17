@@ -3,13 +3,14 @@ import numpy as np
 import open3d as o3d
 from typing import Optional
 
+
 def images_to_tensors(
-        left_img: np.ndarray,
-        right_img: np.ndarray,
-        target_height: int = 800,
-        target_width: int = 640
-        ) -> tuple[np.ndarray, np.ndarray]:
-    """    Preprocess images for ONNX inference:
+    left_img: np.ndarray,
+    right_img: np.ndarray,
+    target_height: int = 800,
+    target_width: int = 640,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Preprocess images for ONNX inference:
     1. Resize if target dimensions are provided
     2. Convert to RGB if needed
     3. Normalize to float32 [0-255]
@@ -54,14 +55,14 @@ def images_to_tensors(
 
 
 def visualize_disparity(
-        disparity: np.ndarray,
-        min_val: Optional[float] = None,
-        max_val: Optional[float] = None,
-        invalid_thres: float = np.inf,
-        color_map: int = cv2.COLORMAP_TURBO,
-        cmap = None,
-        other_output: dict[str, any] = {}
-    ) -> np.ndarray:
+    disparity: np.ndarray,
+    min_val: Optional[float] = None,
+    max_val: Optional[float] = None,
+    invalid_thres: float = np.inf,
+    color_map: int = cv2.COLORMAP_TURBO,
+    cmap=None,
+    other_output: dict[str, any] = {},
+) -> np.ndarray:
     """Colorize and visualize a disparity map with options for custom color mapping.
 
     Args:
@@ -87,35 +88,36 @@ def visualize_disparity(
     H, W = disparity_cp.shape[:2]
 
     invalid_mask = disparity_cp >= invalid_thres
-    if (invalid_mask==0).sum()==0:
+    if (invalid_mask == 0).sum() == 0:
         other_output['min_val'] = None
         other_output['max_val'] = None
         return np.zeros((H, W, 3))
-    
+
     if min_val is None:
-        min_val = disparity_cp[invalid_mask==0].min()
+        min_val = disparity_cp[invalid_mask == 0].min()
 
     if max_val is None:
-        max_val = disparity_cp[invalid_mask==0].max()
+        max_val = disparity_cp[invalid_mask == 0].max()
 
     other_output['min_val'] = min_val
     other_output['max_val'] = max_val
 
-    vis = ((disparity_cp-min_val)/(max_val-min_val)).clip(0, 1) * 255
+    vis = ((disparity_cp - min_val) / (max_val - min_val)).clip(0, 1) * 255
 
     if cmap is None:
-        vis = cv2.applyColorMap(vis.clip(0, 255).astype(np.uint8), color_map)[...,::-1]
+        vis = cv2.applyColorMap(vis.clip(0, 255).astype(np.uint8), color_map)[..., ::-1]
     else:
-        vis = cmap(vis.astype(np.uint8))[...,:3]*255
+        vis = cmap(vis.astype(np.uint8))[..., :3] * 255
 
     if invalid_mask.any():
         vis[invalid_mask] = 0
 
     return vis.astype(np.uint8)
 
+
 def postprocess_disparity(
-        disparity: np.ndarray,
-    ) -> np.ndarray:
+    disparity: np.ndarray,
+) -> np.ndarray:
     """Remove non-overlapping observations between left and right images from
     point cloud, so the remaining points are more reliable.
 
@@ -125,17 +127,18 @@ def postprocess_disparity(
     Returns:
         np.ndarray: Postprocessed disparity map.
     """
-    yy, xx = np.meshgrid(np.arange(disparity.shape[0]), np.arange(disparity.shape[1]), indexing='ij')
+    yy, xx = np.meshgrid(
+        np.arange(disparity.shape[0]), np.arange(disparity.shape[1]), indexing='ij'
+    )
     us_right = xx - disparity
     invalid = us_right < 0
     disparity[invalid] = np.inf
     return disparity
 
-def depth_to_xyzmap(depth: np.ndarray,
-                 K: np.array,
-                 uvs: np.ndarray=None,
-                 zmin: float = 0.1
-    ) -> np.ndarray:
+
+def depth_to_xyzmap(
+    depth: np.ndarray, K: np.array, uvs: np.ndarray = None, zmin: float = 0.1
+) -> np.ndarray:
     """Convert a depth map to a 3D point cloud in camera coordinates.
 
     Args:
@@ -150,33 +153,36 @@ def depth_to_xyzmap(depth: np.ndarray,
         np.ndarray: XYZ coordinate map as an (H,W,3) array, where each pixel contains
             its 3D coordinates (x,y,z) in camera space.
     """
-    invalid_mask = (depth < zmin)
+    invalid_mask = depth < zmin
     H, W = depth.shape[:2]
 
     if uvs is None:
-        vs, us = np.meshgrid(np.arange(0, H),np.arange(0, W), sparse=False, indexing='ij')
+        vs, us = np.meshgrid(
+            np.arange(0, H), np.arange(0, W), sparse=False, indexing='ij'
+        )
         vs = vs.reshape(-1)
         us = us.reshape(-1)
     else:
         uvs = uvs.round().astype(int)
-        us = uvs[:,0]
-        vs = uvs[:,1]
+        us = uvs[:, 0]
+        vs = uvs[:, 1]
 
     zs = depth[vs, us]
     xs = (us - K[0, 2]) * zs / K[0, 0]
     ys = (vs - K[1, 2]) * zs / K[1, 1]
-    pts = np.stack((xs.reshape(-1), ys.reshape(-1), zs.reshape(-1)), 1)  #(N,3)
+    pts = np.stack((xs.reshape(-1), ys.reshape(-1), zs.reshape(-1)), 1)  # (N,3)
     xyz_map = np.zeros((H, W, 3), dtype=np.float32)
     xyz_map[vs, us] = pts
     if invalid_mask.any():
         xyz_map[invalid_mask] = 0
     return xyz_map
 
+
 def points_to_pcd(
-        points: np.ndarray,
-        colors: Optional[np.ndarray] = None,
-        normals: Optional[np.ndarray] = None
-    ) -> o3d.geometry.PointCloud:
+    points: np.ndarray,
+    colors: Optional[np.ndarray] = None,
+    normals: Optional[np.ndarray] = None,
+) -> o3d.geometry.PointCloud:
     """Convert numpy arrays to an Open3D point cloud.
 
     Args:
@@ -200,21 +206,23 @@ def points_to_pcd(
         cloud.normals = o3d.utility.Vector3dVector(normals.astype(np.float64))
     return cloud
 
-def create_point_cloud(
-        disparity: np.ndarray,
-        image: np.ndarray,
-        K: np.ndarray = None,
-        dist_between_cameras: float = 0.1,
-        scale: float = 1.0,
-        z_far: int = 10
-    ) -> o3d.geometry.PointCloud:
 
+def create_point_cloud(
+    disparity: np.ndarray,
+    image: np.ndarray,
+    K: np.ndarray = None,
+    dist_between_cameras: float = 0.1,
+    scale: float = 1.0,
+    z_far: int = 10,
+) -> o3d.geometry.PointCloud:
     K[:2] *= scale
-    depth = K[0,0] * dist_between_cameras / disparity
+    depth = K[0, 0] * dist_between_cameras / disparity
     xyz_map = depth_to_xyzmap(depth, K)
 
     pcd = points_to_pcd(xyz_map.reshape(-1, 3), image.reshape(-1, 3))
-    keep_mask = (np.asarray(pcd.points)[:, 2] > 0) & (np.asarray(pcd.points)[:, 2] <= z_far)
+    keep_mask = (np.asarray(pcd.points)[:, 2] > 0) & (
+        np.asarray(pcd.points)[:, 2] <= z_far
+    )
     keep_ids = np.arange(len(np.asarray(pcd.points)))[keep_mask]
     pcd = pcd.select_by_index(keep_ids)
 

@@ -6,13 +6,13 @@ from src.stereo_inference import StereoInferenceOnnx
 from src.stereo_calibrate import (
     read_stereo_calibration,
     rectify_images,
-    read_camera_intrinsics
+    read_camera_intrinsics,
 )
 from src.utils import (
     images_to_tensors,
     visualize_disparity,
     postprocess_disparity,
-    create_point_cloud
+    create_point_cloud,
 )
 
 """
@@ -31,14 +31,18 @@ Steps:
 
 
 def main():
-    print("Loading stereo calibration parameters and model...")
+    print('Loading stereo calibration parameters and model...')
     # Load stereo calibration parameters
-    stereo_map_left, stereo_map_right = read_stereo_calibration('camera_configs/stereo_calibration.xml')
+    stereo_map_left, stereo_map_right = read_stereo_calibration(
+        'camera_configs/stereo_calibration.xml'
+    )
     # Read camera intrinsics
-    K, distance_between_cameras = read_camera_intrinsics('camera_configs/left_camera_intrinsics.xml')
+    K, distance_between_cameras = read_camera_intrinsics(
+        'camera_configs/left_camera_intrinsics.xml'
+    )
     # Load stereo model
     stereo_model = StereoInferenceOnnx('models/fs_800_640.onnx')
-    print("Parameters and stereo model loaded successfully.")
+    print('Parameters and stereo model loaded successfully.')
 
     # Get all available cameras
     available_cameras = pylon.TlFactory.GetInstance().EnumerateDevices()
@@ -129,7 +133,7 @@ def main():
             # 'c' key for capture
             if k == ord('c'):
                 frame_count += 1
-                print(f"Captured frame {frame_count}")
+                print(f'Captured frame {frame_count}')
                 # Rectify images
                 left_rectified, right_rectified = rectify_images(
                     left_img, right_img, stereo_map_left, stereo_map_right
@@ -150,11 +154,13 @@ def main():
                 cv2.imshow('Disparity Map', disparity_map_viz)
 
                 # Create point cloud
-                pcd = create_point_cloud(disparity_map_proc,
-                                         left_rectified,
-                                         K,
-                                         distance_between_cameras,
-                                         scale=scale)
+                pcd = create_point_cloud(
+                    disparity_map_proc,
+                    left_rectified,
+                    K,
+                    distance_between_cameras,
+                    scale=scale,
+                )
                 o3d.io.write_point_cloud(f'output/pcd/cloud_{frame_count}.ply', pcd)
 
             # ESC key to exit
@@ -171,5 +177,6 @@ def main():
     left_camera.Close()
     right_camera.Close()
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     main()
