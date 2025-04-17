@@ -78,7 +78,6 @@ def main():
     right_img = np.zeros((1, 3, 800, 640), dtype=np.float32)
 
     # Run inference
-    # calcuate time
     start_time = time.time()
     disparity = inference_engine(left_img, right_img)
     print(f'Disparity shape: {disparity.shape}')
