@@ -13,6 +13,7 @@ class StereoCalibration:
         chessboard_height: int,
         chessboard_width: int,
         square_size: float,
+        distance_between_cameras: float = 0.1,
         file_extension: str = '.png',
         output_path: str = 'output/',
     ) -> None:
@@ -24,6 +25,8 @@ class StereoCalibration:
             chessboard_height (int): height of chessboard
             chessboard_width (int): width of chessboard
             square_size (float): size of square in meters
+            distance_between_cameras (float, optional): distance between cameras 
+                in meters. Defaults to 0.1.
             file_extension (str): file extension of images
             output_path (str): path to output directory
         """
@@ -31,6 +34,7 @@ class StereoCalibration:
         self._right_path = Path(right_path)
         self._chessboard_size = (chessboard_width, chessboard_height)
         self._square_size = square_size
+        self._distance_between_cameras = distance_between_cameras
         self._file_extension = file_extension
         self._output_path = Path(output_path)
 
@@ -38,6 +42,9 @@ class StereoCalibration:
         self._chessboard_2d_left_points: list[np.ndarray] = []
         self._chessboard_3d_right_points: list[np.ndarray] = []
         self._chessboard_2d_right_points: list[np.ndarray] = []
+
+        self._calibrated_mtx_left: np.ndarray = None
+        self._calibrated_mtx_right: np.ndarray = None
 
         self._stereo_map_left: tuple[np.ndarray, np.ndarray] = []
         self._stereo_map_right: tuple[np.ndarray, np.ndarray] = []
@@ -224,12 +231,14 @@ class StereoCalibration:
             left=True
         )
         print('Left camera matrix', newcameramtx_left)
+        self._calibrated_mtx_left = newcameramtx_left
 
         # right camera calibration
         mtx_right, dist_right, newcameramtx_right, roi_right = (
             self.calibrate_single_camera(left=False)
         )
         print('Right camera matrix', newcameramtx_right)
+        self._calibrated_mtx_right = newcameramtx_right
 
         # stereo calibration
         print('Calibrating stereo...')
@@ -314,6 +323,30 @@ class StereoCalibration:
         fs.write('stereo_map_right_y', self._stereo_map_right[1])
         fs.release()
 
+    def save_intrinsics(self, left: bool = True) -> None:
+        """Save camera intrinsics to XML file.
+
+        Args:
+            left (bool, optional): True for left camera, False for right camera. Defaults to True.
+        """
+        print('Saving camera intrinsics...')
+        # create output directory if it doesn't exist
+        self._output_path.mkdir(exist_ok=True, parents=True)
+        if left:
+            cam = 'left'
+        else:
+            cam = 'right'
+
+        xml_path = self._output_path / f'{cam}_camera_intrinsics.xml'
+        fs = cv2.FileStorage(xml_path, cv2.FILE_STORAGE_WRITE)
+        if left:
+            fs.write('camera_matrix', self._calibrated_mtx_left)
+        else:
+            fs.write('camera_matrix', self._calibrated_mtx_right)
+
+        fs.write('distance_between_cameras', self._distance_between_cameras)
+        fs.release()
+
 
 def read_stereo_calibration(xml_path: str) -> tuple[np.ndarray, np.ndarray]:
     """Read stereo calibration from XML file.
@@ -325,7 +358,6 @@ def read_stereo_calibration(xml_path: str) -> tuple[np.ndarray, np.ndarray]:
         tuple[np.ndarray, np.ndarray]: stereo_map_left, stereo_map_right
     """
 
-    print('Reading stereo calibration...')
     # use cv2.FileStorage to read stereo calibration
     fs = cv2.FileStorage(xml_path, cv2.FILE_STORAGE_READ)
     stereo_map_left_x = fs.getNode('stereo_map_left_x').mat()
@@ -337,6 +369,24 @@ def read_stereo_calibration(xml_path: str) -> tuple[np.ndarray, np.ndarray]:
         stereo_map_right_x,
         stereo_map_right_y,
     )
+
+
+def read_camera_intrinsics(xml_path: str) -> tuple[np.ndarray, float]:
+    """Read stereo calibration from XML file.
+
+    Args:
+        xml_path (str): path to XML file
+
+    Returns:
+        tuple[np.ndarray, float]: camera matrix, distance between cameras
+    """
+
+    # use cv2.FileStorage to read stereo calibration
+    fs = cv2.FileStorage(xml_path, cv2.FILE_STORAGE_READ)
+    camera_matrix = fs.getNode('camera_matrix').mat()
+    distance_between_cameras = fs.getNode('distance_between_cameras').real()
+    fs.release()
+    return camera_matrix, distance_between_cameras
 
 
 def rectify_images(
