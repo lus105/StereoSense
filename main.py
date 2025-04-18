@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 import open3d as o3d
 from pypylon import pylon
 from pathlib import Path
@@ -139,6 +140,8 @@ def main():
                 left_rectified, right_rectified = rectify_images(
                     left_img, right_img, stereo_map_left, stereo_map_right
                 )
+                left_rectified = cv2.cvtColor(left_rectified, cv2.COLOR_BGR2RGB)
+                right_rectified = cv2.cvtColor(right_rectified, cv2.COLOR_BGR2RGB)
 
                 # Resize
                 left_rectified = cv2.resize(
@@ -164,7 +167,7 @@ def main():
                 # Stereo inference
                 disparity_map = stereo_model(left_tensor, right_tensor)
 
-                # squeeze form 4D to 2D
+                # Squeeze form 4D to 2D
                 disparity_map = disparity_map.squeeze(0).squeeze(0)
 
                 # Visualize disparity map

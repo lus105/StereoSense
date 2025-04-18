@@ -216,6 +216,8 @@ def create_point_cloud(
         o3d.geometry.PointCloud: Open3D point cloud containing the valid 3D points
             with corresponding RGB colors from the image.
     """
+    # deep copy K
+    K = K.copy()
     K[:2] *= scale
     depth = K[0, 0] * dist_between_cameras / disparity
     xyz_map = depth_to_xyzmap(depth, K)
