@@ -7,38 +7,19 @@ from typing import Optional
 def images_to_tensors(
     left_img: np.ndarray,
     right_img: np.ndarray,
-    target_height: int = 800,
-    target_width: int = 640,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Preprocess images for ONNX inference:
-    1. Resize if target dimensions are provided
-    2. Convert to RGB if needed
-    3. Normalize to float32 [0-255]
-    4. Transpose from HWC to CHW format
-    5. Add batch dimension
+    1. Normalize to float32 [0-255]
+    2. Transpose from HWC to CHW format
+    3. Add batch dimension
 
     Args:
         left_img (np.ndarray): left image.
         right_img (np.ndarray): right image.
-        target_height (int, optional): target height. Defaults to 800.
-        target_width (int, optional): target width. Defaults to 640.
 
     Returns:
         tuple[np.ndarray, np.ndarray]: left and right image tensors.
     """
-    # Calculate image scale
-    scale = min(target_height / left_img.shape[0], target_width / left_img.shape[1])
-
-    # Resize if dimensions are provided
-    if target_height is not None and target_width is not None:
-        left_img = cv2.resize(left_img, (target_width, target_height))
-        right_img = cv2.resize(right_img, (target_width, target_height))
-
-    # Convert to RGB if in BGR format
-    if left_img.shape[2] == 3:  # If color image
-        left_img = cv2.cvtColor(left_img, cv2.COLOR_BGR2RGB)
-        right_img = cv2.cvtColor(right_img, cv2.COLOR_BGR2RGB)
-
     # Convert to float32 [0-255]
     left_img = left_img.astype(np.float32)
     right_img = right_img.astype(np.float32)
@@ -51,7 +32,7 @@ def images_to_tensors(
     left_img = np.expand_dims(left_img, axis=0)  # (1, C, H, W)
     right_img = np.expand_dims(right_img, axis=0)  # (1, C, H, W)
 
-    return left_img, right_img, scale
+    return left_img, right_img
 
 
 def visualize_disparity(
@@ -215,6 +196,26 @@ def create_point_cloud(
     scale: float = 1.0,
     z_far: int = 10,
 ) -> o3d.geometry.PointCloud:
+    """Creates a 3D point cloud from stereo disparity and RGB image data.
+
+    Converts the disparity map to depth using the camera intrinsics and baseline,
+    then transforms into a 3D point cloud with color information.
+
+    Args:
+        disparity (np.ndarray): Disparity map as a 2D array.
+        image (np.ndarray): RGB image corresponding to the disparity map.
+        K (np.ndarray, optional): Camera intrinsic matrix (3x3). Will be scaled by the
+            scale parameter. Defaults to None.
+        dist_between_cameras (float, optional): Baseline distance between stereo cameras
+            in meters. Defaults to 0.1.
+        scale (float, optional): Scale factor applied to camera intrinsics. Defaults to 1.0.
+        z_far (int, optional): Maximum depth threshold in meters; points farther than this
+            will be filtered out. Defaults to 10.
+
+    Returns:
+        o3d.geometry.PointCloud: Open3D point cloud containing the valid 3D points
+            with corresponding RGB colors from the image.
+    """
     K[:2] *= scale
     depth = K[0, 0] * dist_between_cameras / disparity
     xyz_map = depth_to_xyzmap(depth, K)

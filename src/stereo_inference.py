@@ -45,6 +45,44 @@ class StereoInferenceOnnx:
         except Exception as e:
             raise RuntimeError(f'Failed to load ONNX model: {e}')
 
+    @property
+    def input_height(self) -> int:
+        """Get the height dimension from the model input shape.
+
+        Returns:
+            The height of the input as an integer.
+        """
+        if self.model is None:
+            raise RuntimeError('Model not initialized')
+        # ONNX input shape is usually [batch, channels, height, width]
+        # Get the first input (left image)
+        input_shape = self.model.get_inputs()[0].shape
+        # Check if the shape is dynamic or static
+        if isinstance(input_shape[2], int):
+            return input_shape[2]  # Return the height dimension
+        else:
+            # If dynamic, return None or raise an exception
+            raise RuntimeError('Model has dynamic input height')
+
+    @property
+    def input_width(self) -> int:
+        """Get the width dimension from the model input shape.
+
+        Returns:
+            The width of the input as an integer.
+        """
+        if self.model is None:
+            raise RuntimeError('Model not initialized')
+        # ONNX input shape is usually [batch, channels, height, width]
+        # Get the first input (left image)
+        input_shape = self.model.get_inputs()[0].shape
+        # Check if the shape is dynamic or static
+        if isinstance(input_shape[3], int):
+            return input_shape[3]  # Return the width dimension
+        else:
+            # If dynamic, return None or raise an exception
+            raise RuntimeError('Model has dynamic input width')
+
     def __call__(self, left_img: np.ndarray, right_img: np.ndarray) -> np.ndarray:
         """Run inference on stereo image pair.
 

@@ -1,6 +1,7 @@
 import cv2
 import open3d as o3d
 from pypylon import pylon
+from pathlib import Path
 
 from src.stereo_inference import StereoInferenceOnnx
 from src.stereo_calibrate import (
@@ -138,20 +139,52 @@ def main():
                 left_rectified, right_rectified = rectify_images(
                     left_img, right_img, stereo_map_left, stereo_map_right
                 )
+
+                # Resize
+                left_rectified = cv2.resize(
+                    left_rectified,
+                    (stereo_model.input_width, stereo_model.input_height),
+                    interpolation=cv2.INTER_LINEAR,
+                )
+                right_rectified = cv2.resize(
+                    right_rectified,
+                    (stereo_model.input_width, stereo_model.input_height),
+                    interpolation=cv2.INTER_LINEAR,
+                )
+                scale = min(
+                    left_rectified.shape[0] / left_img.shape[0],
+                    right_rectified.shape[1] / right_img.shape[1],
+                )
+
                 # Preprocess images for the model
-                left_tensor, right_tensor, scale = images_to_tensors(
+                left_tensor, right_tensor = images_to_tensors(
                     left_rectified, right_rectified
                 )
+
                 # Stereo inference
                 disparity_map = stereo_model(left_tensor, right_tensor)
+
                 # squeeze form 4D to 2D
                 disparity_map = disparity_map.squeeze(0).squeeze(0)
+
                 # Visualize disparity map
                 disparity_map_viz = visualize_disparity(disparity_map)
+
                 # Postprocess disparity map
                 disparity_map_proc = postprocess_disparity(disparity_map)
+
                 # Show disparity map
-                cv2.imshow('Disparity Map', disparity_map_viz)
+                cv2.imshow(
+                    'Disparity Map', cv2.cvtColor(disparity_map_viz, cv2.COLOR_RGB2BGR)
+                )
+
+                # save disparity map
+                output_path = Path('output/disp/')
+                output_path.mkdir(parents=True, exist_ok=True)
+                cv2.imwrite(
+                    str(output_path / f'disp_{frame_count}.png'),
+                    cv2.cvtColor(disparity_map_viz, cv2.COLOR_RGB2BGR),
+                )
 
                 # Create point cloud
                 pcd = create_point_cloud(
@@ -161,7 +194,12 @@ def main():
                     distance_between_cameras,
                     scale=scale,
                 )
-                o3d.io.write_point_cloud(f'output/pcd/cloud_{frame_count}.ply', pcd)
+                # Save point cloud
+                output_path = Path('output/pcd/')
+                output_path.mkdir(parents=True, exist_ok=True)
+                o3d.io.write_point_cloud(
+                    str(output_path / f'pcd_{frame_count}.ply'), pcd
+                )
 
             # ESC key to exit
             elif k == 27:
