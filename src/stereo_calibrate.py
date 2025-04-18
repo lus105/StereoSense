@@ -389,38 +389,25 @@ def read_camera_intrinsics(xml_path: str) -> tuple[np.ndarray, float]:
     return camera_matrix, distance_between_cameras
 
 
-def rectify_images(
-    left_image: np.ndarray,
-    right_image: np.ndarray,
-    stereo_map_left: tuple[np.ndarray, np.ndarray],
-    stereo_map_right: tuple[np.ndarray, np.ndarray],
-) -> tuple[np.ndarray, np.ndarray]:
-    """Rectify left and right images using stereo mapping.
+def rectify_image(
+    image: np.ndarray,
+    stereo_map: tuple[np.ndarray, np.ndarray],
+) -> np.ndarray:
+    """Rectify image
 
     Args:
-        left_image (np.ndarray): left_image
-        right_image (np.ndarray): right_image
-        stereo_map_left (tuple[np.ndarray, np.ndarray]): stereo_map_left
-        stereo_map_right (tuple[np.ndarray, np.ndarray]): stereo_map_right
+        image (np.ndarray): left_image
+        stereo_map (tuple[np.ndarray, np.ndarray]): stereo_map
 
     Returns:
-        tuple[np.ndarray, np.ndarray]: left_rectified, right_rectified (images)
+        np.ndarray: rectified image
     """
-    # rectify images
-    left_rectified = cv2.remap(
-        left_image,
-        stereo_map_left[0],
-        stereo_map_left[1],
+    rectified = cv2.remap(
+        image,
+        stereo_map[0],
+        stereo_map[1],
         cv2.INTER_LANCZOS4,
         cv2.BORDER_CONSTANT,
         0,
     )
-    right_rectified = cv2.remap(
-        right_image,
-        stereo_map_right[0],
-        stereo_map_right[1],
-        cv2.INTER_LANCZOS4,
-        cv2.BORDER_CONSTANT,
-        0,
-    )
-    return left_rectified, right_rectified
+    return rectified

@@ -6,7 +6,7 @@ from pathlib import Path
 from src.stereo_inference import StereoInferenceOnnx
 from src.stereo_calibrate import (
     read_stereo_calibration,
-    rectify_images,
+    rectify_image,
     read_camera_intrinsics,
 )
 from src.utils import (
@@ -136,9 +136,8 @@ def main():
                 frame_count += 1
                 print(f'Captured frame {frame_count}')
                 # Rectify images
-                left_rectified, right_rectified = rectify_images(
-                    left_img, right_img, stereo_map_left, stereo_map_right
-                )
+                left_rectified = rectify_image(left_img, stereo_map_left)
+                right_rectified = rectify_image(right_img, stereo_map_right)
                 left_rectified = cv2.cvtColor(left_rectified, cv2.COLOR_BGR2RGB)
                 right_rectified = cv2.cvtColor(right_rectified, cv2.COLOR_BGR2RGB)
 

@@ -42,6 +42,7 @@ def visualize_disparity(
     invalid_thres: float = np.inf,
     color_map: int = cv2.COLORMAP_TURBO,
     cmap=None,
+    mask: Optional[np.ndarray] = None,
     other_output: dict[str, any] = {},
 ) -> np.ndarray:
     """Colorize and visualize a disparity map with options for custom color mapping.
@@ -58,6 +59,10 @@ def visualize_disparity(
             Defaults to cv2.COLORMAP_TURBO.
         cmap (Optional[Colormap], optional): Matplotlib colormap object to use instead of OpenCV's.
             Defaults to None.
+        mask (Optional[np.ndarray], optional): Binary mask where white pixels (1) represent 
+            foreground and black pixels (0) represent background. If provided, background 
+            disparity values will be set to 0. Should be the same size as disparity. 
+            Defaults to None.
         other_output (Dict[str, Any], optional): Dictionary to store the computed
             min and max values. Defaults to {}.
 
@@ -67,6 +72,15 @@ def visualize_disparity(
     disparity_cp = disparity.copy()
 
     H, W = disparity_cp.shape[:2]
+
+    # Apply mask if provided
+    if mask is not None:
+        # Ensure mask is the same shape as disparity
+        if mask.shape[:2] != disparity_cp.shape[:2]:
+            raise ValueError("Mask must have the same dimensions as disparity map")
+        
+        # Set background (black pixels in mask) disparity values to 0
+        disparity_cp[mask == 0] = 0
 
     invalid_mask = disparity_cp >= invalid_thres
     if (invalid_mask == 0).sum() == 0:
@@ -98,23 +112,40 @@ def visualize_disparity(
 
 def postprocess_disparity(
     disparity: np.ndarray,
+    mask: Optional[np.ndarray] = None,
 ) -> np.ndarray:
     """Remove non-overlapping observations between left and right images from
     point cloud, so the remaining points are more reliable.
 
     Args:
         disparity (np.ndarray): Disparity map as a 2D array.
+        mask (Optional[np.ndarray], optional): Binary mask where white pixels (1) represent 
+            foreground and black pixels (0) represent background. If provided, background 
+            disparity values will be set to 0. Should be the same size as disparity. 
+            Defaults to None.
 
     Returns:
         np.ndarray: Postprocessed disparity map.
     """
+    # Create a copy to avoid modifying the input directly
+    disparity_cp = disparity.copy()
+    
+    # Apply mask if provided
+    if mask is not None:
+        # Ensure mask is the same shape as disparity
+        if mask.shape[:2] != disparity_cp.shape[:2]:
+            raise ValueError("Mask must have the same dimensions as disparity map")
+        
+        # Set background (black pixels in mask) disparity values to 0
+        disparity_cp[mask == 0] = np.inf
+
     yy, xx = np.meshgrid(
-        np.arange(disparity.shape[0]), np.arange(disparity.shape[1]), indexing='ij'
+        np.arange(disparity_cp.shape[0]), np.arange(disparity_cp.shape[1]), indexing='ij'
     )
-    us_right = xx - disparity
+    us_right = xx - disparity_cp
     invalid = us_right < 0
-    disparity[invalid] = np.inf
-    return disparity
+    disparity_cp[invalid] = np.inf
+    return disparity_cp
 
 
 def depth_to_xyzmap(
