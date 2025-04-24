@@ -4,15 +4,10 @@ import torch
 import numpy as np
 import onnxruntime
 
+from .base_inference import InferenceBase
 
-class StereoInferenceOnnx:
-    """Basic inference implementation for stereo ONNX models using ONNX Runtime."""
 
-    def __init__(self, model_path: str) -> None:
-        self._model_path = model_path
-        self.model = None
-        self.initialize()
-
+class StereoInferenceOnnx(InferenceBase):
     def initialize(self) -> None:
         try:
             session_options = onnxruntime.SessionOptions()
