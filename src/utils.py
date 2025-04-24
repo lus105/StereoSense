@@ -59,9 +59,9 @@ def visualize_disparity(
             Defaults to cv2.COLORMAP_TURBO.
         cmap (Optional[Colormap], optional): Matplotlib colormap object to use instead of OpenCV's.
             Defaults to None.
-        mask (Optional[np.ndarray], optional): Binary mask where white pixels (1) represent 
-            foreground and black pixels (0) represent background. If provided, background 
-            disparity values will be set to 0. Should be the same size as disparity. 
+        mask (Optional[np.ndarray], optional): Binary mask where white pixels (1) represent
+            foreground and black pixels (0) represent background. If provided, background
+            disparity values will be set to 0. Should be the same size as disparity.
             Defaults to None.
         other_output (Dict[str, Any], optional): Dictionary to store the computed
             min and max values. Defaults to {}.
@@ -77,8 +77,8 @@ def visualize_disparity(
     if mask is not None:
         # Ensure mask is the same shape as disparity
         if mask.shape[:2] != disparity_cp.shape[:2]:
-            raise ValueError("Mask must have the same dimensions as disparity map")
-        
+            raise ValueError('Mask must have the same dimensions as disparity map')
+
         # Set background (black pixels in mask) disparity values to 0
         disparity_cp[mask == 0] = 0
 
@@ -119,9 +119,9 @@ def postprocess_disparity(
 
     Args:
         disparity (np.ndarray): Disparity map as a 2D array.
-        mask (Optional[np.ndarray], optional): Binary mask where white pixels (1) represent 
-            foreground and black pixels (0) represent background. If provided, background 
-            disparity values will be set to 0. Should be the same size as disparity. 
+        mask (Optional[np.ndarray], optional): Binary mask where white pixels (1) represent
+            foreground and black pixels (0) represent background. If provided, background
+            disparity values will be set to 0. Should be the same size as disparity.
             Defaults to None.
 
     Returns:
@@ -129,18 +129,20 @@ def postprocess_disparity(
     """
     # Create a copy to avoid modifying the input directly
     disparity_cp = disparity.copy()
-    
+
     # Apply mask if provided
     if mask is not None:
         # Ensure mask is the same shape as disparity
         if mask.shape[:2] != disparity_cp.shape[:2]:
-            raise ValueError("Mask must have the same dimensions as disparity map")
-        
+            raise ValueError('Mask must have the same dimensions as disparity map')
+
         # Set background (black pixels in mask) disparity values to 0
         disparity_cp[mask == 0] = np.inf
 
     yy, xx = np.meshgrid(
-        np.arange(disparity_cp.shape[0]), np.arange(disparity_cp.shape[1]), indexing='ij'
+        np.arange(disparity_cp.shape[0]),
+        np.arange(disparity_cp.shape[1]),
+        indexing='ij',
     )
     us_right = xx - disparity_cp
     invalid = us_right < 0

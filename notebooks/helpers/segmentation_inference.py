@@ -3,9 +3,12 @@ import rootutils
 import numpy as np
 import onnxruntime as ort
 
-rootutils.setup_root(os.path.abspath(''), indicator=['.git', 'pyproject.toml'], pythonpath=True)
+rootutils.setup_root(
+    os.path.abspath(''), indicator=['.git', 'pyproject.toml'], pythonpath=True
+)
 
 from src.base_inference import InferenceBase
+
 
 class SegmentationInferenceOnnx(InferenceBase):
     def initialize(self) -> None:
