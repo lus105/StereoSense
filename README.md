@@ -26,16 +26,16 @@ pip install -r requirements.txt
 
 #### Instructions (use with basler cameras)
 1. Gather calibration data with basler cameras: ```python src/stereo_grab_basler.py ```
-2. Run stereo camera calibration: ```notebooks/calibrate.ipynb ```. Change constants to your specific ones.
+2. Run stereo camera calibration: ```notebooks/1.0_Calibrate.ipynb ```. Change constants to your specific ones.
 3. Download [model](https://drive.google.com/file/d/1OhkN9eJKYKqpmAayoDoskqX-ZyZSvjs-/view?usp=sharing) and place inside models/ directory.
 4. Run ```python main.py ```
 5. Once the configs are loaded, press 'c' to capture frames. Results will be saved in output/ directory.
 
 #### Instructions (use without camera)
-1. Create your own camera calibration files (refer to ```notebooks/calibrate.ipynb ```)
+1. Create your own camera calibration files (refer to ```notebooks/1.0_Calibrate.ipynb ```)
 2. Download [model](https://drive.google.com/file/d/1OhkN9eJKYKqpmAayoDoskqX-ZyZSvjs-/view?usp=sharing) and place inside models/ directory.
 3. Grab sample images (left and right) and place inside data/samples directory.
-4. Run ```notebooks/stereo_inference.ipynb ```
+4. Run ```notebooks/2.0_Stereo_inference.ipynb ```
 
 #### Notes
 
