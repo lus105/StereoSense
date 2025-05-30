@@ -48,3 +48,7 @@ The input size of the model is 800x640 (hxw).
 <img src="res/disparity_map.png" width="400" />
 <img src="res/pcl.png" width="400" />
 </div>
+
+#### Resources
+
+- Model used: https://github.com/NVlabs/FoundationStereo
