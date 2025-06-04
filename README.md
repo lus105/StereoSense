@@ -52,3 +52,4 @@ The input size of the model is 800x640 (hxw).
 #### Resources
 
 - Model used: https://github.com/NVlabs/FoundationStereo
+- Point Cloud Viewer using OpenCV Viz: https://github.com/rytisss/anaglyph3D
