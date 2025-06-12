@@ -19,7 +19,9 @@ conda update -n base conda
 conda create --name StereoSense python=3.11
 # activate conda environment
 conda activate StereoSense
-# install requirements
+# install pytorch with gpu support. MAKE SURE, YOUR GPU IS CUDA COMPATIBLE
+pip install torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0 --index-url https://download.pytorch.org/whl/cu124
+# install rest of the requirements
 pip install -r requirements.txt
 ```
 <strong>Note:</strong> for using complete flow (main.py), install [basler pylon.](https://www.baslerweb.com/en/software/pylon/?srsltid=AfmBOooUIwLYSjNfoSDrSVLIKNl0GcDOSuO1PzaT0-Hp7pFtrDHgTb_H)
