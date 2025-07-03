@@ -12,3 +12,4 @@ ipykernel
 onnxruntime-gpu
 open3d
 rootutils
+gdown
