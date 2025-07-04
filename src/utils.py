@@ -263,3 +263,63 @@ def create_point_cloud(
     pcd = pcd.select_by_index(keep_ids)
 
     return pcd
+
+
+def filter_outliers(pcd: o3d.geometry.PointCloud,
+                    method: str = 'statistical',
+                    nb_neighbors: int = 5,
+                    std_ratio: float = 3.0,
+                    radius: float = 0.05,
+                    min_neighbors: int = 5) -> o3d.geometry.PointCloud:
+    """
+    Removes outlier points from a point cloud using statistical or radius method.
+    
+    Args:
+        pcd: Input point cloud.
+        method: 'statistical' or 'radius'.
+        nb_neighbors: For statistical — number of neighbors to consider.
+        std_ratio: For statistical — threshold based on standard deviation.
+        radius: For radius — radius within which neighbors must exist.
+        min_neighbors: For radius — minimum number of neighbors within the radius.
+    
+    Returns:
+        Filtered point cloud with outliers removed.
+    """
+    if method == 'statistical':
+        cl, ind = pcd.remove_statistical_outlier(nb_neighbors=nb_neighbors,
+                                                 std_ratio=std_ratio)
+    elif method == 'radius':
+        cl, ind = pcd.remove_radius_outlier(nb_points=min_neighbors,
+                                            radius=radius)
+    else:
+        raise ValueError("Invalid method: choose 'statistical' or 'radius'")
+    
+    return cl
+
+
+def remove_small_clusters(pcd: o3d.geometry.PointCloud,
+                          voxel_size: float = 0.01,
+                          min_cluster_size: int = 100) -> o3d.geometry.PointCloud:
+    """
+    Removes small connected components (e.g. stray lines) from a dense point cloud.
+
+    Args:
+        pcd: Input point cloud.
+        voxel_size: Size used to define connectivity.
+        min_cluster_size: Minimum number of points a cluster must have to be kept.
+
+    Returns:
+        Filtered point cloud with small components removed.
+    """
+    labels = np.array(pcd.cluster_dbscan(eps=voxel_size, min_points=5, print_progress=False))
+    max_label = labels.max()
+    print(f"Found {max_label + 1} clusters")
+
+    # Filter clusters by size
+    kept_indices = []
+    for i in range(max_label + 1):
+        indices = np.where(labels == i)[0]
+        if len(indices) >= min_cluster_size:
+            kept_indices.extend(indices)
+
+    return pcd.select_by_index(kept_indices)
