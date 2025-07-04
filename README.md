@@ -29,7 +29,7 @@ pip install -r requirements.txt
 cd StereoSense
 # camera configuration files
 gdown https://drive.google.com/drive/folders/1eQgWBdZ5Wql8KhbyHwOw1qTIiZa8p0fI?usp=drive_link --folder
-# data
+# data (if crashes, try to download folder via link)
 gdown https://drive.google.com/drive/folders/1NLBtNG1S1Re7wvpqb_stPmDM85cfIMTI?usp=drive_link --folder
 # models
 gdown https://drive.google.com/drive/folders/1iYu9bRODKAQKzr25ATOwjRbDO71O4Yhf?usp=drive_link --folder
