@@ -221,6 +221,32 @@ def points_to_pcd(
     return cloud
 
 
+def disparity_to_depth_map(
+    disparity: np.ndarray,
+    K: np.ndarray,
+    dist_between_cameras: float = 0.1,
+    scale: float = 1.0,
+) -> np.ndarray:
+    """Convert disparity map to depth map with actual depth values in meters.
+
+    Args:
+        disparity (np.ndarray): Disparity map as a 2D array.
+        K (np.ndarray): Camera intrinsic matrix (3x3).
+        dist_between_cameras (float, optional): Baseline distance between stereo cameras
+            in meters. Defaults to 0.1.
+        scale (float, optional): Scale factor applied to camera intrinsics. Defaults to 1.0.
+
+    Returns:
+        np.ndarray: Depth map as a 2D array with depth values in meters.
+    """
+    # deep copy K
+    K = K.copy()
+    K[:2] *= scale
+    depth_map = K[0, 0] * dist_between_cameras / disparity
+    
+    return depth_map
+
+
 def create_point_cloud(
     disparity: np.ndarray,
     image: np.ndarray,
@@ -249,10 +275,9 @@ def create_point_cloud(
         o3d.geometry.PointCloud: Open3D point cloud containing the valid 3D points
             with corresponding RGB colors from the image.
     """
-    # deep copy K
+    depth = disparity_to_depth_map(disparity, K, dist_between_cameras, scale)
     K = K.copy()
     K[:2] *= scale
-    depth = K[0, 0] * dist_between_cameras / disparity
     xyz_map = depth_to_xyzmap(depth, K)
 
     pcd = points_to_pcd(xyz_map.reshape(-1, 3), image.reshape(-1, 3))
