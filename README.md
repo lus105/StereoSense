@@ -19,6 +19,8 @@ conda update -n base conda
 conda create --name StereoSense python=3.11
 # activate conda environment
 conda activate StereoSense
+# install pytorch
+pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu126
 # install requirements
 pip install -r requirements.txt
 ```
