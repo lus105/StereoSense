@@ -33,6 +33,21 @@ def main():
     left_camera.ExposureTime.SetValue(exposure_time)
     right_camera.ExposureTime.SetValue(exposure_time)
 
+    # gain
+    gain = 0
+    left_camera.Gain.SetValue(gain)
+    right_camera.Gain.SetValue(gain)
+
+    # black level
+    black_level = 0
+    left_camera.BlackLevel.SetValue(black_level)
+    right_camera.BlackLevel.SetValue(black_level)
+    
+    # gamma
+    gamma = 1
+    left_camera.Gamma.SetValue(gamma)
+    right_camera.Gamma.SetValue(gamma)
+
     camera_width = 3200
     left_camera.Width.SetValue(camera_width)
     right_camera.Width.SetValue(camera_width)

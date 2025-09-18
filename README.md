@@ -19,9 +19,9 @@ conda update -n base conda
 conda create --name StereoSense python=3.11
 # activate conda environment
 conda activate StereoSense
-# install pytorch with gpu support. MAKE SURE, YOUR GPU IS CUDA COMPATIBLE
-pip install torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0 --index-url https://download.pytorch.org/whl/cu124
-# install rest of the requirements
+# install pytorch
+pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu126
+# install requirements
 pip install -r requirements.txt
 ```
 
@@ -31,7 +31,7 @@ pip install -r requirements.txt
 cd StereoSense
 # camera configuration files
 gdown https://drive.google.com/drive/folders/1eQgWBdZ5Wql8KhbyHwOw1qTIiZa8p0fI?usp=drive_link --folder
-# data
+# data (if crashes, try to download folder via link)
 gdown https://drive.google.com/drive/folders/1NLBtNG1S1Re7wvpqb_stPmDM85cfIMTI?usp=drive_link --folder
 # models
 gdown https://drive.google.com/drive/folders/1iYu9bRODKAQKzr25ATOwjRbDO71O4Yhf?usp=drive_link --folder

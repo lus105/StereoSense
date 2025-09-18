@@ -221,6 +221,32 @@ def points_to_pcd(
     return cloud
 
 
+def disparity_to_depth_map(
+    disparity: np.ndarray,
+    K: np.ndarray,
+    dist_between_cameras: float = 0.1,
+    scale: float = 1.0,
+) -> np.ndarray:
+    """Convert disparity map to depth map with actual depth values in meters.
+
+    Args:
+        disparity (np.ndarray): Disparity map as a 2D array.
+        K (np.ndarray): Camera intrinsic matrix (3x3).
+        dist_between_cameras (float, optional): Baseline distance between stereo cameras
+            in meters. Defaults to 0.1.
+        scale (float, optional): Scale factor applied to camera intrinsics. Defaults to 1.0.
+
+    Returns:
+        np.ndarray: Depth map as a 2D array with depth values in meters.
+    """
+    # deep copy K
+    K = K.copy()
+    K[:2] *= scale
+    depth_map = K[0, 0] * dist_between_cameras / disparity
+    
+    return depth_map
+
+
 def create_point_cloud(
     disparity: np.ndarray,
     image: np.ndarray,
@@ -249,10 +275,9 @@ def create_point_cloud(
         o3d.geometry.PointCloud: Open3D point cloud containing the valid 3D points
             with corresponding RGB colors from the image.
     """
-    # deep copy K
+    depth = disparity_to_depth_map(disparity, K, dist_between_cameras, scale)
     K = K.copy()
     K[:2] *= scale
-    depth = K[0, 0] * dist_between_cameras / disparity
     xyz_map = depth_to_xyzmap(depth, K)
 
     pcd = points_to_pcd(xyz_map.reshape(-1, 3), image.reshape(-1, 3))
@@ -263,3 +288,63 @@ def create_point_cloud(
     pcd = pcd.select_by_index(keep_ids)
 
     return pcd
+
+
+def filter_outliers(pcd: o3d.geometry.PointCloud,
+                    method: str = 'statistical',
+                    nb_neighbors: int = 5,
+                    std_ratio: float = 3.0,
+                    radius: float = 0.05,
+                    min_neighbors: int = 5) -> o3d.geometry.PointCloud:
+    """
+    Removes outlier points from a point cloud using statistical or radius method.
+    
+    Args:
+        pcd: Input point cloud.
+        method: 'statistical' or 'radius'.
+        nb_neighbors: For statistical — number of neighbors to consider.
+        std_ratio: For statistical — threshold based on standard deviation.
+        radius: For radius — radius within which neighbors must exist.
+        min_neighbors: For radius — minimum number of neighbors within the radius.
+    
+    Returns:
+        Filtered point cloud with outliers removed.
+    """
+    if method == 'statistical':
+        cl, ind = pcd.remove_statistical_outlier(nb_neighbors=nb_neighbors,
+                                                 std_ratio=std_ratio)
+    elif method == 'radius':
+        cl, ind = pcd.remove_radius_outlier(nb_points=min_neighbors,
+                                            radius=radius)
+    else:
+        raise ValueError("Invalid method: choose 'statistical' or 'radius'")
+    
+    return cl
+
+
+def remove_small_clusters(pcd: o3d.geometry.PointCloud,
+                          voxel_size: float = 0.01,
+                          min_cluster_size: int = 100) -> o3d.geometry.PointCloud:
+    """
+    Removes small connected components (e.g. stray lines) from a dense point cloud.
+
+    Args:
+        pcd: Input point cloud.
+        voxel_size: Size used to define connectivity.
+        min_cluster_size: Minimum number of points a cluster must have to be kept.
+
+    Returns:
+        Filtered point cloud with small components removed.
+    """
+    labels = np.array(pcd.cluster_dbscan(eps=voxel_size, min_points=5, print_progress=False))
+    max_label = labels.max()
+    print(f"Found {max_label + 1} clusters")
+
+    # Filter clusters by size
+    kept_indices = []
+    for i in range(max_label + 1):
+        indices = np.where(labels == i)[0]
+        if len(indices) >= min_cluster_size:
+            kept_indices.extend(indices)
+
+    return pcd.select_by_index(kept_indices)
