@@ -75,14 +75,21 @@ class StereoImages:
     
     def process(
         self, 
-        left_path: str, 
-        right_path: str,
+        left_image: str | np.ndarray, 
+        right_image: str | np.ndarray,
         target_width: int,
         target_height: int
     ) -> dict:
         """Complete processing pipeline from file paths to tensors."""
         # Load images
-        left_raw, right_raw = self.__load_images(left_path, right_path)
+        if isinstance(left_image, np.ndarray) and isinstance(right_image, np.ndarray):
+            # Skip loading, use arrays directly
+            left_raw, right_raw = left_image, right_image
+        elif isinstance(left_image, str) and isinstance(right_image, str):
+            # Load images from file paths
+            left_raw, right_raw = self.__load_images(left_image, right_image)
+        else:
+            raise ValueError("Both inputs must be either strings (file paths) or numpy arrays")
         
         # Rectify
         left_rect, right_rect = self.__rectify_images(left_raw, right_raw)

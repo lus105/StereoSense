@@ -13,8 +13,6 @@
 git clone https://github.com/lus105/StereoSense.git
 # change directory
 cd StereoSense
-# update conda
-conda update -n base conda
 # create conda environment
 conda create --name StereoSense python=3.11
 # activate conda environment

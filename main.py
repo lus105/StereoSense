@@ -10,6 +10,7 @@ from src.stereo_calibrate import (
     read_camera_intrinsics,
 )
 from src.utils import (
+    StereoImages,
     images_to_tensors,
     visualize_disparity,
     postprocess_disparity,
@@ -44,6 +45,9 @@ def main():
     # Load stereo model
     stereo_model = StereoInferenceOnnx('models/fs_800_640.onnx')
     print('Parameters and stereo model loaded successfully.')
+
+    # Load stereo image preprocessor
+    processor = StereoImages(stereo_map_left, stereo_map_right)
 
     # Get all available cameras
     available_cameras = pylon.TlFactory.GetInstance().EnumerateDevices()
@@ -135,32 +139,16 @@ def main():
             if k == ord('c'):
                 frame_count += 1
                 print(f'Captured frame {frame_count}')
-                # Rectify images
-                left_rectified = rectify_image(left_img, stereo_map_left)
-                right_rectified = rectify_image(right_img, stereo_map_right)
-                left_rectified = cv2.cvtColor(left_rectified, cv2.COLOR_BGR2RGB)
-                right_rectified = cv2.cvtColor(right_rectified, cv2.COLOR_BGR2RGB)
-
-                # Resize
-                left_rectified = cv2.resize(
-                    left_rectified,
-                    (stereo_model.input_width, stereo_model.input_height),
-                    interpolation=cv2.INTER_LINEAR,
+                
+                proc_result = processor.process(
+                    left_img, right_img,
+                    stereo_model.input_width,
+                    stereo_model.input_height
                 )
-                right_rectified = cv2.resize(
-                    right_rectified,
-                    (stereo_model.input_width, stereo_model.input_height),
-                    interpolation=cv2.INTER_LINEAR,
-                )
-                scale = min(
-                    left_rectified.shape[0] / left_img.shape[0],
-                    right_rectified.shape[1] / right_img.shape[1],
-                )
-
-                # Preprocess images for the model
-                left_tensor, right_tensor = images_to_tensors(
-                    left_rectified, right_rectified
-                )
+                
+                left_tensor, right_tensor = proc_result['tensors']
+                scale = proc_result['scale']
+                left_rectified = proc_result['processed_images'][0]
 
                 # Stereo inference
                 disparity_map = stereo_model(left_tensor, right_tensor)
