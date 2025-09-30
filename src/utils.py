@@ -96,10 +96,10 @@ class StereoImages:
         left_tensor, right_tensor = images_to_tensors(left_prep, right_prep)
         
         return {
-            'tensors': (left_tensor, right_tensor),
-            'processed_images': (left_prep, right_prep),
-            'rectified_images': (left_rect, right_rect),
             'raw_images': (left_raw, right_raw),
+            'rectified_images': (left_rect, right_rect),
+            'processed_images': (left_prep, right_prep),
+            'tensors': (left_tensor, right_tensor),
             'scale': scale
         }
     
