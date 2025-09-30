@@ -1,7 +1,120 @@
+from typing import Optional
+from pathlib import Path
+
 import cv2
 import numpy as np
 import open3d as o3d
-from typing import Optional
+
+from .stereo_calibrate import rectify_image
+
+class StereoImages:
+    def __init__(self, stereo_map_left, stereo_map_right) -> None:
+        """Initialize with stereo rectification maps."""
+        self.stereo_map_left = stereo_map_left
+        self.stereo_map_right = stereo_map_right
+        
+        # Cache for loaded images
+        self._left_image = None
+        self._right_image = None
+    
+    def __load_images(self, left_path: str, right_path: str) -> tuple[np.ndarray, np.ndarray]:
+        """Load stereo image pair from file paths."""
+        # Validate paths
+        if not Path(left_path).exists():
+            raise FileNotFoundError(f"Left image not found: {left_path}")
+        if not Path(right_path).exists():
+            raise FileNotFoundError(f"Right image not found: {right_path}")
+        
+        left_image = cv2.imread(left_path, cv2.IMREAD_COLOR)
+        right_image = cv2.imread(right_path, cv2.IMREAD_COLOR)
+        
+        if left_image is None:
+            raise ValueError(f"Failed to load left image: {left_path}")
+        if right_image is None:
+            raise ValueError(f"Failed to load right image: {right_path}")
+        
+        # Cache for potential reuse
+        self._left_image = left_image
+        self._right_image = right_image
+        
+        return left_image, right_image
+    
+    def __rectify_images(self, left_image: np.ndarray, right_image: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """Apply stereo rectification to image pair."""
+        left_rectified = rectify_image(left_image, self.stereo_map_left)
+        right_rectified = rectify_image(right_image, self.stereo_map_right)
+        return left_rectified, right_rectified
+    
+    def __preprocess(
+        self, 
+        left_image: np.ndarray, 
+        right_image: np.ndarray,
+        target_width: int,
+        target_height: int
+    ) -> tuple[np.ndarray, np.ndarray, float]:
+        """Preprocess images for model input (BGR->RGB, resize)."""
+        # Convert BGR to RGB
+        left_rgb = cv2.cvtColor(left_image, cv2.COLOR_BGR2RGB)
+        right_rgb = cv2.cvtColor(right_image, cv2.COLOR_BGR2RGB)
+        
+        # Resize to target dimensions
+        left_resized = cv2.resize(
+            left_rgb, (target_width, target_height), interpolation=cv2.INTER_LINEAR
+        )
+        right_resized = cv2.resize(
+            right_rgb, (target_width, target_height), interpolation=cv2.INTER_LINEAR
+        )
+        
+        # Calculate scale factor
+        scale = min(
+            target_height / left_image.shape[0],
+            target_width / left_image.shape[1]
+        )
+        
+        return left_resized, right_resized, scale
+    
+    def process(
+        self, 
+        left_image: str | np.ndarray, 
+        right_image: str | np.ndarray,
+        target_width: int,
+        target_height: int
+    ) -> dict:
+        """Complete processing pipeline from file paths to tensors."""
+        # Load images
+        if isinstance(left_image, np.ndarray) and isinstance(right_image, np.ndarray):
+            # Skip loading, use arrays directly
+            left_raw, right_raw = left_image, right_image
+        elif isinstance(left_image, str) and isinstance(right_image, str):
+            # Load images from file paths
+            left_raw, right_raw = self.__load_images(left_image, right_image)
+        else:
+            raise ValueError("Both inputs must be either strings (file paths) or numpy arrays")
+        
+        # Rectify
+        left_rect, right_rect = self.__rectify_images(left_raw, right_raw)
+        
+        # Preprocess for model
+        left_prep, right_prep, scale = self.__preprocess(
+            left_rect, right_rect, target_width, target_height
+        )
+        
+        # Convert to tensors
+        left_tensor, right_tensor = images_to_tensors(left_prep, right_prep)
+        
+        return {
+            'raw_images': (left_raw, right_raw),
+            'rectified_images': (left_rect, right_rect),
+            'processed_images': (left_prep, right_prep),
+            'tensors': (left_tensor, right_tensor),
+            'scale': scale
+        }
+    
+    # Convenience methods for common use cases
+    def to_tensors(self, left_path: str, right_path: str, target_width: int, target_height: int) -> tuple[np.ndarray, np.ndarray]:
+        """Simplified method that returns only tensors."""
+        result = self.process(left_path, right_path, target_width, target_height)
+        return result['tensors']
 
 
 def images_to_tensors(
