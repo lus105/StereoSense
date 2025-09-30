@@ -6,12 +6,10 @@ from pathlib import Path
 from src.stereo_inference import StereoInferenceOnnx
 from src.stereo_calibrate import (
     read_stereo_calibration,
-    rectify_image,
     read_camera_intrinsics,
 )
 from src.utils import (
     StereoImages,
-    images_to_tensors,
     visualize_disparity,
     postprocess_disparity,
     create_point_cloud,
