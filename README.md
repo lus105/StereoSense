@@ -28,13 +28,13 @@ pip install -r requirements.txt
 # navigate to root
 cd StereoSense
 # camera configuration files
-gdown https://drive.google.com/drive/folders/1eQgWBdZ5Wql8KhbyHwOw1qTIiZa8p0fI?usp=drive_link --folder
+gdown https://drive.google.com/drive/folders/1mpDP1PHbM-xMh-Wwjx0DMOjTdmwnsyYU?usp=drive_link --folder
 # data (if crashes, try to download folder via link)
-gdown https://drive.google.com/drive/folders/1NLBtNG1S1Re7wvpqb_stPmDM85cfIMTI?usp=drive_link --folder
+gdown https://drive.google.com/drive/folders/1p_mfaFk4_bPl_JFaC41rpq9V0vVR02iw?usp=drive_link --folder
 # models
-gdown https://drive.google.com/drive/folders/1iYu9bRODKAQKzr25ATOwjRbDO71O4Yhf?usp=drive_link --folder
+gdown https://drive.google.com/drive/folders/15HT1PC70Jcmr9OSBmgRcslL31b8EEJld?usp=drive_link --folder
 # output (generated pointclouds)
-gdown https://drive.google.com/drive/folders/1acZNnXLbF-1pbCH3Cdu4D7wpWsstc3ap?usp=drive_link --folder
+gdown https://drive.google.com/drive/folders/1N9eJ53YJbRBLYQ5ItHnJdAaVqU10zd-i?usp=drive_link --folder
 ```
 <strong>Note:</strong> for using complete flow (main.py), install [basler pylon.](https://www.baslerweb.com/en/software/pylon/?srsltid=AfmBOooUIwLYSjNfoSDrSVLIKNl0GcDOSuO1PzaT0-Hp7pFtrDHgTb_H)
 
