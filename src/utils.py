@@ -759,6 +759,61 @@ def compute_pcd_differences(
     return source_colored
 
 
+def highlight_pcd_anomalies(
+    source: o3d.geometry.PointCloud,
+    reference: o3d.geometry.PointCloud,
+    max_dist: Optional[float] = None,
+    percentile: float = 95.0,
+    colormap: str = "jet"
+) -> o3d.geometry.PointCloud:
+    """Highlight anomaly points that exceed distance threshold from reference point cloud.
+    
+    This function colors outlier points in red while preserving original colors for
+    normal points. Points exceeding the distance threshold are considered anomalies.
+    This is useful for anomaly detection and quality control applications.
+
+    Args:
+        source (o3d.geometry.PointCloud): Source point cloud to analyze for anomalies.
+        reference (o3d.geometry.PointCloud): Reference point cloud to compute distances to.
+        max_dist (Optional[float], optional): Distance threshold for anomaly detection.
+            If None, it's computed as the specified percentile of all distances.
+            Defaults to None.
+        percentile (float, optional): Percentile value used to compute max_dist when it's None.
+            Points above this percentile distance are considered anomalies. Defaults to 95.0.
+        colormap (str, optional): Not used in this version, kept for compatibility.
+            Defaults to "jet".
+
+    Returns:
+        o3d.geometry.PointCloud: Colored copy of the source point cloud where anomaly
+            points are highlighted in red and normal points retain original colors.
+    """
+    distances = np.asarray(source.compute_point_cloud_distance(reference))
+    if max_dist is None:
+        max_dist = np.percentile(distances, percentile)
+
+    # Create a copy to preserve original structure
+    source_colored = copy.deepcopy(source)
+    
+    # Get original colors or create default colors if none exist
+    if source_colored.has_colors():
+        colors = np.asarray(source_colored.colors)
+    else:
+        # Default to gray color if no colors exist
+        colors = np.full((len(source_colored.points), 3), 0.5)
+    
+    # Highlight anomalies (outliers) in red
+    anomaly_mask = distances >= max_dist
+    colors[anomaly_mask] = [1.0, 0.0, 0.0]  # Red for anomalies
+    
+    source_colored.colors = o3d.utility.Vector3dVector(colors)
+    
+    num_anomalies = np.sum(anomaly_mask)
+    print(f"Found {num_anomalies} anomaly points out of {len(source_colored.points)} total points")
+    print(f"Anomaly threshold: {max_dist:.4f}")
+    
+    return source_colored
+
+
 def crop_by_height(
     pcd: o3d.geometry.PointCloud, 
     z_min: float, 
